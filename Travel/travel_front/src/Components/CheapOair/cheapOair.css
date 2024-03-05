@@ -1,0 +1,41 @@
+
+.cheapoair-container {
+    padding: 20px;
+    background-color:rgb(255, 253, 253) ;
+    margin: 3rem 0 0;
+    padding-top: 45px;
+    min-height: 130px;
+    border-radius: 5px;
+  }
+  
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .feature {
+    flex: 1 1 50%; /* Two features per row on larger screens */
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  
+  h2 {
+    margin-top: 0;
+  }
+  
+  p {
+    margin-bottom: 0;
+  }
+  
+  /* Media query for mobile view */
+  @media (max-width: 768px) {
+    .feature {
+      flex: 1 1 100%; /* One feature per row on smaller screens */
+    }
+  }
+  .text-green{
+    color: green;
+      font-size:30px;
+  }
+  
+

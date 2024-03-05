@@ -1,0 +1,83 @@
+.price-area {
+    background: url('./Assets/price-bg.png');
+    background-size: cover;
+  }
+
+  .font{
+    font-size: 20px;
+    color: #222;
+  }
+
+  .link:hover{
+    text-decoration: none;
+  }
+  
+  .price-area .single-price {
+    background: #fff;
+    padding: 50px;
+  }
+  
+  .price-area .single-price h4 {
+    text-align: center;
+    border-bottom: 1px solid #f8b600;
+    padding-bottom: 20px;
+  }
+  
+  .price-area .single-price .price-list {
+    margin-top: 30px;
+  }
+  
+  .price-area .single-price .price-list li {
+    margin-bottom: 10px;
+  }
+  
+  .price-area .single-price .price-list li .price-btn {
+    background: #f9f9ff;
+    border: 1px solid #eee;
+    color: #222;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+  }
+  
+  .price-area .single-price .price-list li .price-btn:hover {
+    border-color: #f8b600;
+    background: #f8b600;
+    color: #fff;
+  }
+  
+  @media (max-width: 991px) {
+    .price-area .single-price {
+      margin-bottom: 30px;
+    }
+  }
+
+
+  .single-other-issue .thumb {
+    overflow: hidden;
+  }
+  
+  .single-other-issue .thumb img {
+    width: 100%;
+    -webkit-transition: all 0.3s ease 0s;
+    -moz-transition: all 0.3s ease 0s;
+    -o-transition: all 0.3s ease 0s;
+    transition: all 0.3s ease 0s;
+  }
+  
+  .single-other-issue h4 {
+    margin: 20px 0;
+    -webkit-transition: all 0.3s ease 0s;
+    -moz-transition: all 0.3s ease 0s;
+    -o-transition: all 0.3s ease 0s;
+    transition: all 0.3s ease 0s;
+  }
+  
+  .single-other-issue:hover h4 {
+    color: #f8b600;
+  }
+  
+  .single-other-issue:hover .thumb img {
+    transform: scale(1.08) rotate(-3deg);
+  }
+  

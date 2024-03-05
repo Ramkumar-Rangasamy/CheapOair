@@ -1,0 +1,9 @@
+.card-color{
+   background-color:whitesmoke;
+   border-radius: 5px;
+   padding: 50px;
+}
+
+.outline-style:hover{
+   border: none;
+}
