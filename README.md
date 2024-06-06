@@ -35,6 +35,7 @@ This project is a flight booking application inspired by CheapOair. Users can se
 |-- README.md
 
 Usage Instructions
+
  1) Register and Login:
     --Navigate to the registration page and create an account.
     --Use the login page to access your account.
@@ -43,11 +44,11 @@ Usage Instructions
 
      --Use the flight search form to find available flights.
      
-  3) Book a Flight:
+ 3) Book a Flight:
  
       --Select a flight from the search results and proceed to book.
 
-   4) Process Payments:
+ 4) Process Payments:
 
       --Enter payment details and complete the transaction.
 
