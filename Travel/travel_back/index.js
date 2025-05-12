@@ -3,12 +3,10 @@ const cors = require('cors');
 const fileupload = require('express-fileupload');
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
-
-
-
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
-
+// const jwt = require('jsonwebtoken'); // (Optional for token use)
+const PORT = process.env.PORT || 2001;
 const app = express();
 
 app.use(cors());
@@ -27,13 +25,13 @@ const db = mysql.createPool({
   database: "travel_application"
 });
 
-// Middleware to handle errors
+// Middleware to handle unexpected errors
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
 
-/// Mock function to find user by email
+// Helper: Find user by email
 async function findUserByEmail(email) {
   return new Promise((resolve, reject) => {
     const selectUserQuery = "SELECT * FROM signuppage WHERE email = ?";
@@ -47,31 +45,36 @@ async function findUserByEmail(email) {
   });
 }
 
-//SignUp endpoint
+// ✅ Signup Route
 app.post(
   '/signup',
   [
     body('email')
-    .notEmpty().withMessage('Email field can\'t be left blank.')
-    .isEmail().withMessage('Invalid email address')
-    .normalizeEmail().withMessage('Email field can\'t be left blank.')
-    .custom(async value => {
-      const user = await findUserByEmail(value);
+      .notEmpty().withMessage('Email field can\'t be left blank.')
+      .isEmail().withMessage('Invalid email address')
+      .normalizeEmail()
+      .custom(async value => {
+        const user = await findUserByEmail(value);
         if (user) {
           throw new Error('E-mail already in use');
         }
-    }),
+      }),
 
-    body('firstname').isLength({ min: 3, max: 20 }).withMessage( `First name field can't be less than 2 characters.`)
-    .not().isEmpty().withMessage('First name is required'),
-    body('lastname').isLength({ min: 3, max: 10 }).withMessage(`Last name field can't be less than 2 characters.`)
-    .not().isEmpty().withMessage('Last name is required'),
-    body("password").isStrongPassword({
-      minLength: 8,
-      minLowercase: 1,
-      minUppercase: 1,
-      minNumbers: 1
-    }).withMessage("Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, and one number"),
+    body('firstname')
+      .isLength({ min: 3, max: 20 }).withMessage('First name must be between 3 and 20 characters.')
+      .notEmpty().withMessage('First name is required'),
+
+    body('lastname')
+      .isLength({ min: 3, max: 10 }).withMessage('Last name must be between 3 and 10 characters.')
+      .notEmpty().withMessage('Last name is required'),
+
+    body('password')
+      .isStrongPassword({
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1
+      }).withMessage("Password must be at least 8 characters and contain one uppercase, one lowercase, and one number"),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -81,70 +84,94 @@ app.post(
 
     try {
       const { email, firstname, lastname, password } = req.body;
-
-      // Hash the password before storing it
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      const insertUserQuery =
-        "INSERT INTO signuppage (email, firstname, lastname, password, status, effectiveFrom, effectiveTo, createdBy, createdOn, modifiedBy, modifiedOn) VALUES (?, ?, ?, ?, 'active', CURRENT_DATE(), '9999-04-05', 'admin', CURRENT_TIMESTAMP(), 'admin', CURRENT_DATE())";
+      const insertUserQuery = `
+        INSERT INTO signuppage (
+          email, firstname, lastname, password, status, 
+          effectiveFrom, effectiveTo, createdBy, createdOn, modifiedBy, modifiedOn
+        ) VALUES (?, ?, ?, ?, 'active', CURRENT_DATE(), '9999-04-05', 'admin', CURRENT_TIMESTAMP(), 'admin', CURRENT_DATE())
+      `;
 
-      await db.query(insertUserQuery, [email, firstname, lastname, hashedPassword]);
-      return res.status(201).send('User registered successfully');
-      
+      db.query(insertUserQuery, [email, firstname, lastname, hashedPassword], (err) => {
+        if (err) {
+          console.error('Error inserting user:', err);
+          return res.status(500).send('Database error');
+        }
+        res.status(201).send('User registered successfully');
+      });
+
     } catch (error) {
-      console.error('Error creating user:', error);
-      return res.status(500).send('Internal Server Error');
+      console.error('Error in signup:', error);
+      res.status(500).send('Internal Server Error');
     }
   }
 );
 
-// Login endpoint
-app.post('/login', 
-[
-  body('email').isEmail().normalizeEmail().withMessage('Email field can\'t be left blank.'),
-  body('password').isLength({ min: 3, max: 8 }).withMessage('password also  field can\'t be left blank.'),
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+// ✅ Login Route
+app.post(
+  '/login',
+  [
+    body('email')
+      .notEmpty().withMessage('Email is required')
+      .isEmail().withMessage('Invalid email')
+      .normalizeEmail(),
 
-  const {email, password } = req.body;
+    body('password')
+      .notEmpty().withMessage('Password is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  try {
-    const query = 'SELECT * FROM signuppage WHERE email = ?';
+    const { email, password } = req.body;
 
-    db.query(query, [email], async (err, results) => {
-      if (err) {
-        console.error('Error executing MySQL query:', err);
-        return res.status(500).json({ error: 'Internal Server Error' });
-      }
+    try {
+      const query = 'SELECT * FROM signuppage WHERE email = ?';
+      db.query(query, [email], async (err, results) => {
+        if (err) {
+          console.error('Error querying DB:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
 
-      if (results.length === 0) {
-        return res.status(404).json({ error: 'User not found' });
-      }
+        if (results.length === 0) {
+          return res.status(404).json({ error: 'User not found' });
+        }
 
-      const user = results[0];
-
-      try {
+        const user = results[0];
         const validPassword = await bcrypt.compare(password, user.password);
 
         if (!validPassword) {
           return res.status(401).json({ error: 'Invalid password' });
         }
 
-        // Here you can generate and send a JWT token for authentication
-        res.status(200).json({ message: 'Login successful' });
-      } catch (error) {
-        console.error('Error comparing passwords:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-      }
-    });
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+        // Optional: Generate JWT Token
+        /*
+        const token = jwt.sign({ userId: user.id }, 'your_jwt_secret', { expiresIn: '1h' });
+        */
+
+        res.status(200).json({
+          message: 'Login successful',
+          user: {
+            id: user.id,
+            email: user.email,
+            firstname: user.firstname,
+            lastname: user.lastname
+          }
+          // token // if using JWT
+        });
+      });
+
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
-});
+);
+
+
 
 
 //Fights
@@ -515,6 +542,9 @@ app.post('/confirm-booking',
 
 
 
-app.listen(2001, () => {
-  console.log("Server is running on port 2001");
+// ✅ Start Server
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
+
